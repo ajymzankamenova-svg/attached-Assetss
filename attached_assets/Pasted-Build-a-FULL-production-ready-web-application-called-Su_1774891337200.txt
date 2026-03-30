@@ -1,0 +1,261 @@
+Build a FULL production-ready web application called:
+
+"Sun Proactive AI — Autonomous Social Impact Platform"
+
+IMPORTANT:
+This is NOT a simple CRUD app. This is an AI-powered system with deep logic.
+ALL features below are REQUIRED. Do NOT skip anything.
+
+-----------------------------------
+🌍 GLOBAL REQUIREMENT: TRILINGUAL SYSTEM
+-----------------------------------
+The entire system MUST support:
+- Kazakh (KZ)
+- Russian (RU)
+- English (EN)
+
+Requirements:
+- UI language switcher
+- AI responses adapt to selected language
+- Notifications multilingual
+- Mixed language input supported (KZ+RU)
+
+-----------------------------------
+🧱 TECH STACK
+-----------------------------------
+Frontend:
+- Next.js (React)
+- TailwindCSS
+
+Backend:
+- Node.js (Express) OR FastAPI (Python)
+
+Database:
+- PostgreSQL
+- pgvector (for embeddings)
+
+AI:
+- OpenAI API (LLM)
+- Embeddings (semantic search)
+- Vision API (image verification)
+
+-----------------------------------
+🔐 AUTH SYSTEM
+-----------------------------------
+- JWT authentication
+- Roles:
+  - Admin (Curator)
+  - Volunteer
+- Registration + Login
+- Profile system
+
+-----------------------------------
+🧠 CORE FEATURE 1: AI TASK CREATION
+-----------------------------------
+User enters raw text:
+Example: "В районе грязно, надо что-то сделать"
+
+System MUST:
+- Start AI dialogue
+- Ask clarifying questions
+- Convert into STRICT JSON:
+
+{
+  title,
+  description,
+  location,
+  date,
+  duration,
+  required_people,
+  skills_required,
+  age_requirements
+}
+
+EXTRA:
+- Suggest optimal number of people based on similar tasks
+
+-----------------------------------
+🧠 CORE FEATURE 2: TASK QUALITY ANALYSIS
+-----------------------------------
+Before publishing:
+- AI evaluates task quality (score 0–100)
+- Detects missing fields (time, location, etc.)
+- Suggests improvements
+
+-----------------------------------
+🧠 CORE FEATURE 3: SEMANTIC MATCHING
+-----------------------------------
+Use embeddings + cosine similarity
+
+Match volunteers based on:
+- Skills
+- Interests
+- Availability
+- Location
+
+Show:
+- Match percentage
+- Explain WHY matched
+
+Example:
+"You participated in eco projects + you are available + you have organization skills"
+
+-----------------------------------
+🧠 CORE FEATURE 4: AI TEAM BUILDER
+-----------------------------------
+System builds FULL TEAM:
+- Leader
+- Executor
+- Communicator
+
+Balanced team selection logic required
+
+-----------------------------------
+🧠 CORE FEATURE 5: PROACTIVE AI MANAGER
+-----------------------------------
+If task not filled:
+- Auto-find volunteers
+- Send notifications
+
+Example:
+"You are идеально подходите (95%) for this task"
+
+-----------------------------------
+🧠 CORE FEATURE 6: RAG AI CHATBOT
+-----------------------------------
+Volunteer can ask about task:
+- AI must ONLY answer using task data
+- If no info:
+  "This information is not provided"
+
+-----------------------------------
+🧠 CORE FEATURE 7: VISION VERIFICATION
+-----------------------------------
+Volunteer uploads photo
+
+AI must:
+- Analyze image
+- Compare with task
+- Output:
+  - Approved
+  - Rejected + reason
+
+-----------------------------------
+🧠 CORE FEATURE 8: SUCCESS PREDICTION
+-----------------------------------
+Before task:
+- Predict success % (e.g. 68%)
+- Explain why:
+  - Not enough people
+  - Weak skills
+
+-----------------------------------
+🧠 CORE FEATURE 9: RISK ANALYSIS
+-----------------------------------
+Detect:
+- Volunteers may not come
+- Bad timing
+- Low participation probability
+
+-----------------------------------
+🧠 CORE FEATURE 10: SMART SUGGESTIONS
+-----------------------------------
+If no responses:
+AI suggests:
+- Change time
+- Simplify requirements
+- Improve description
+
+-----------------------------------
+🧠 CORE FEATURE 11: PERSONAL AI RECOMMENDATION
+-----------------------------------
+AI tells volunteer:
+"You are most useful here"
+
+-----------------------------------
+🧠 CORE FEATURE 12: VOLUNTEER SURVEY (ONBOARDING)
+-----------------------------------
+When user signs up:
+- Ask questions
+- Detect preferences:
+  - Nature → eco tasks
+  - Children → social work
+
+-----------------------------------
+🧠 CORE FEATURE 13: MAP SYSTEM
+-----------------------------------
+- Show user location
+- Show nearby tasks
+
+-----------------------------------
+🧠 CORE FEATURE 14: FEEDBACK + HOURS
+-----------------------------------
+After task:
+- Admin gives review
+- Adds volunteer hours
+
+-----------------------------------
+🧠 CORE FEATURE 15: PORTFOLIO SYSTEM
+-----------------------------------
+Each volunteer has:
+- Verified skills
+- Hours worked
+- Rating
+
+-----------------------------------
+🧠 CORE FEATURE 16: REPUTATION SYSTEM
+-----------------------------------
+AI analyzes:
+- Reliability
+- Activity
+- Behavior
+
+-----------------------------------
+🧠 CORE FEATURE 17: GAMIFICATION
+-----------------------------------
+- Levels
+- Badges
+- Achievements
+
+-----------------------------------
+🧠 CORE FEATURE 18: LEARNING SYSTEM
+-----------------------------------
+After tasks:
+- AI improves matching
+
+-----------------------------------
+🧠 CORE FEATURE 19: SMART GEO MATCHING
+-----------------------------------
+Match based on:
+- Distance
+- Time
+- Transport
+
+-----------------------------------
+🧠 CORE FEATURE 20: ADMIN SMART ASSIST
+-----------------------------------
+When creating task:
+AI warns:
+"You forgot time/location/etc."
+
+-----------------------------------
+📊 UI REQUIREMENTS
+-----------------------------------
+- Modern UI
+- Dashboard for Admin and Volunteer
+- Clean UX
+- Explanation blocks (Trust UI)
+
+-----------------------------------
+🚀 FINAL REQUIREMENT
+-----------------------------------
+- Fully working MVP
+- Clean architecture
+- Ready to deploy
+- Include README with setup instructions
+
+-----------------------------------
+IMPORTANT:
+Do NOT simplify logic.
+Do NOT remove AI features.
+Implement real API calls where possible.

@@ -1,22 +1,35 @@
 openapi: 3.1.0
 info:
-  # Do not change the title, if the title changes, the import paths will be broken
   title: Api
   version: 0.1.0
-  description: API specification
+  description: Sun Proactive AI — Autonomous Social Impact Platform API
 servers:
   - url: /api
     description: Base API path
 tags:
   - name: health
     description: Health operations
+  - name: auth
+    description: Authentication and user management
+  - name: tasks
+    description: Task management
+  - name: volunteers
+    description: Volunteer management
+  - name: ai
+    description: AI features
+  - name: notifications
+    description: Notifications
+  - name: admin
+    description: Admin operations
+  - name: openai
+    description: OpenAI chat integration
+
 paths:
   /healthz:
     get:
       operationId: healthCheck
       tags: [health]
       summary: Health check
-      description: Returns server health status
       responses:
         "200":
           description: Healthy
@@ -24,13 +37,1644 @@ paths:
             application/json:
               schema:
                 $ref: "#/components/schemas/HealthStatus"
+
+  # Auth
+  /auth/register:
+    post:
+      operationId: register
+      tags: [auth]
+      summary: Register a new user
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/RegisterRequest"
+      responses:
+        "201":
+          description: Registered
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/AuthResponse"
+        "400":
+          description: Bad request
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+
+  /auth/login:
+    post:
+      operationId: login
+      tags: [auth]
+      summary: Login
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/LoginRequest"
+      responses:
+        "200":
+          description: Logged in
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/AuthResponse"
+        "401":
+          description: Unauthorized
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+
+  /auth/me:
+    get:
+      operationId: getMe
+      tags: [auth]
+      summary: Get current user profile
+      security:
+        - bearerAuth: []
+      responses:
+        "200":
+          description: User profile
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/UserProfile"
+
+  /auth/onboarding:
+    post:
+      operationId: submitOnboarding
+      tags: [auth]
+      summary: Submit volunteer onboarding survey
+      security:
+        - bearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/OnboardingRequest"
+      responses:
+        "200":
+          description: Onboarding complete
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/UserProfile"
+
+  # Tasks
+  /tasks:
+    get:
+      operationId: getTasks
+      tags: [tasks]
+      summary: List all tasks
+      security:
+        - bearerAuth: []
+      parameters:
+        - name: status
+          in: query
+          schema:
+            type: string
+            enum: [draft, published, active, completed, cancelled]
+        - name: category
+          in: query
+          schema:
+            type: string
+        - name: lat
+          in: query
+          schema:
+            type: number
+        - name: lng
+          in: query
+          schema:
+            type: number
+        - name: radius
+          in: query
+          schema:
+            type: number
+      responses:
+        "200":
+          description: Task list
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/Task"
+
+    post:
+      operationId: createTask
+      tags: [tasks]
+      summary: Create a new task
+      security:
+        - bearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/CreateTaskRequest"
+      responses:
+        "201":
+          description: Task created
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Task"
+
+  /tasks/{id}:
+    get:
+      operationId: getTask
+      tags: [tasks]
+      summary: Get a task by ID
+      security:
+        - bearerAuth: []
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+      responses:
+        "200":
+          description: Task detail
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/TaskDetail"
+
+    patch:
+      operationId: updateTask
+      tags: [tasks]
+      summary: Update a task
+      security:
+        - bearerAuth: []
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/UpdateTaskRequest"
+      responses:
+        "200":
+          description: Updated
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Task"
+
+  /tasks/{id}/publish:
+    post:
+      operationId: publishTask
+      tags: [tasks]
+      summary: Publish a task
+      security:
+        - bearerAuth: []
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+      responses:
+        "200":
+          description: Published
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Task"
+
+  /tasks/{id}/apply:
+    post:
+      operationId: applyToTask
+      tags: [tasks]
+      summary: Volunteer applies to a task
+      security:
+        - bearerAuth: []
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+      responses:
+        "200":
+          description: Applied
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Application"
+
+  /tasks/{id}/applications:
+    get:
+      operationId: getTaskApplications
+      tags: [tasks]
+      summary: Get applications for a task
+      security:
+        - bearerAuth: []
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+      responses:
+        "200":
+          description: Applications list
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/Application"
+
+  /tasks/{id}/feedback:
+    post:
+      operationId: submitTaskFeedback
+      tags: [tasks]
+      summary: Admin submits feedback for a completed task
+      security:
+        - bearerAuth: []
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/FeedbackRequest"
+      responses:
+        "200":
+          description: Feedback submitted
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/FeedbackResponse"
+
+  /tasks/dashboard/summary:
+    get:
+      operationId: getTaskDashboardSummary
+      tags: [tasks]
+      summary: Get dashboard summary stats
+      security:
+        - bearerAuth: []
+      responses:
+        "200":
+          description: Dashboard stats
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/DashboardSummary"
+
+  /tasks/dashboard/activity:
+    get:
+      operationId: getRecentActivity
+      tags: [tasks]
+      summary: Get recent platform activity feed
+      security:
+        - bearerAuth: []
+      responses:
+        "200":
+          description: Activity feed
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/ActivityItem"
+
+  # Volunteers
+  /volunteers:
+    get:
+      operationId: getVolunteers
+      tags: [volunteers]
+      summary: List all volunteers
+      security:
+        - bearerAuth: []
+      responses:
+        "200":
+          description: Volunteer list
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/VolunteerProfile"
+
+  /volunteers/{id}:
+    get:
+      operationId: getVolunteer
+      tags: [volunteers]
+      summary: Get volunteer portfolio/profile
+      security:
+        - bearerAuth: []
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+      responses:
+        "200":
+          description: Volunteer portfolio
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/VolunteerPortfolio"
+
+  /volunteers/leaderboard:
+    get:
+      operationId: getLeaderboard
+      tags: [volunteers]
+      summary: Get volunteer leaderboard
+      security:
+        - bearerAuth: []
+      responses:
+        "200":
+          description: Leaderboard
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/LeaderboardEntry"
+
+  # Notifications
+  /notifications:
+    get:
+      operationId: getNotifications
+      tags: [notifications]
+      summary: Get user notifications
+      security:
+        - bearerAuth: []
+      responses:
+        "200":
+          description: Notifications
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/Notification"
+
+  /notifications/{id}/read:
+    post:
+      operationId: markNotificationRead
+      tags: [notifications]
+      summary: Mark notification as read
+      security:
+        - bearerAuth: []
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+      responses:
+        "200":
+          description: Marked read
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Notification"
+
+  # AI Endpoints
+  /ai/task-dialogue:
+    post:
+      operationId: aiTaskDialogue
+      tags: [ai]
+      summary: AI dialogue to create a structured task from raw text
+      security:
+        - bearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/AiDialogueRequest"
+      responses:
+        "200":
+          description: AI dialogue response
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/AiDialogueResponse"
+
+  /ai/task-quality/{taskId}:
+    get:
+      operationId: analyzeTaskQuality
+      tags: [ai]
+      summary: Analyze task quality (score 0-100, missing fields, suggestions)
+      security:
+        - bearerAuth: []
+      parameters:
+        - name: taskId
+          in: path
+          required: true
+          schema:
+            type: integer
+      responses:
+        "200":
+          description: Quality analysis
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/TaskQualityAnalysis"
+
+  /ai/match-volunteers/{taskId}:
+    get:
+      operationId: matchVolunteers
+      tags: [ai]
+      summary: Semantically match volunteers to a task
+      security:
+        - bearerAuth: []
+      parameters:
+        - name: taskId
+          in: path
+          required: true
+          schema:
+            type: integer
+      responses:
+        "200":
+          description: Matched volunteers with scores
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/VolunteerMatch"
+
+  /ai/build-team/{taskId}:
+    post:
+      operationId: buildTeam
+      tags: [ai]
+      summary: AI builds an optimal team for a task
+      security:
+        - bearerAuth: []
+      parameters:
+        - name: taskId
+          in: path
+          required: true
+          schema:
+            type: integer
+      responses:
+        "200":
+          description: Built team with roles
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/TeamBuildResult"
+
+  /ai/predict-success/{taskId}:
+    get:
+      operationId: predictTaskSuccess
+      tags: [ai]
+      summary: Predict task success percentage
+      security:
+        - bearerAuth: []
+      parameters:
+        - name: taskId
+          in: path
+          required: true
+          schema:
+            type: integer
+      responses:
+        "200":
+          description: Success prediction
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/SuccessPrediction"
+
+  /ai/risk-analysis/{taskId}:
+    get:
+      operationId: analyzeTaskRisks
+      tags: [ai]
+      summary: Analyze risks for a task
+      security:
+        - bearerAuth: []
+      parameters:
+        - name: taskId
+          in: path
+          required: true
+          schema:
+            type: integer
+      responses:
+        "200":
+          description: Risk analysis
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/RiskAnalysis"
+
+  /ai/smart-suggestions/{taskId}:
+    get:
+      operationId: getSmartSuggestions
+      tags: [ai]
+      summary: Get AI suggestions to improve task response rate
+      security:
+        - bearerAuth: []
+      parameters:
+        - name: taskId
+          in: path
+          required: true
+          schema:
+            type: integer
+      responses:
+        "200":
+          description: Smart suggestions
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/SmartSuggestions"
+
+  /ai/personal-recommendation:
+    get:
+      operationId: getPersonalRecommendation
+      tags: [ai]
+      summary: Get AI personalized task recommendations for a volunteer
+      security:
+        - bearerAuth: []
+      responses:
+        "200":
+          description: Personal recommendations
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/TaskRecommendation"
+
+  /ai/chatbot/{taskId}:
+    post:
+      operationId: chatbotQuery
+      tags: [ai]
+      summary: RAG chatbot for task questions
+      security:
+        - bearerAuth: []
+      parameters:
+        - name: taskId
+          in: path
+          required: true
+          schema:
+            type: integer
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/ChatbotRequest"
+      responses:
+        "200":
+          description: Chatbot answer
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ChatbotResponse"
+
+  /ai/verify-completion/{applicationId}:
+    post:
+      operationId: verifyCompletion
+      tags: [ai]
+      summary: AI vision verification of task completion photo
+      security:
+        - bearerAuth: []
+      parameters:
+        - name: applicationId
+          in: path
+          required: true
+          schema:
+            type: integer
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/VerifyCompletionRequest"
+      responses:
+        "200":
+          description: Verification result
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/VerificationResult"
+
+  /ai/reputation/{volunteerId}:
+    get:
+      operationId: getReputationAnalysis
+      tags: [ai]
+      summary: Get AI reputation analysis for a volunteer
+      security:
+        - bearerAuth: []
+      parameters:
+        - name: volunteerId
+          in: path
+          required: true
+          schema:
+            type: integer
+      responses:
+        "200":
+          description: Reputation analysis
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ReputationAnalysis"
+
+  # OpenAI Conversations (RAG Chat)
+  /openai/conversations:
+    get:
+      operationId: getConversations
+      tags: [openai]
+      summary: Get user conversations
+      security:
+        - bearerAuth: []
+      responses:
+        "200":
+          description: Conversations
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/Conversation"
+    post:
+      operationId: createConversation
+      tags: [openai]
+      summary: Create a new conversation
+      security:
+        - bearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/CreateConversationRequest"
+      responses:
+        "201":
+          description: Created
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Conversation"
+
+  /openai/conversations/{id}:
+    get:
+      operationId: getConversation
+      tags: [openai]
+      summary: Get conversation with messages
+      security:
+        - bearerAuth: []
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+      responses:
+        "200":
+          description: Conversation
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ConversationWithMessages"
+
+  /openai/conversations/{id}/messages:
+    post:
+      operationId: sendOpenaiMessage
+      tags: [openai]
+      summary: Send a message (SSE streaming)
+      security:
+        - bearerAuth: []
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/SendOpenaiMessageBody"
+      responses:
+        "200":
+          description: SSE stream
+          content:
+            text/event-stream:
+              schema:
+                type: string
+
 components:
+  securitySchemes:
+    bearerAuth:
+      type: http
+      scheme: bearer
+      bearerFormat: JWT
+
   schemas:
     HealthStatus:
       type: object
       properties:
         status:
           type: string
-      required:
-        - status
+      required: [status]
 
+    ErrorResponse:
+      type: object
+      properties:
+        error:
+          type: string
+        message:
+          type: string
+      required: [error]
+
+    RegisterRequest:
+      type: object
+      properties:
+        email:
+          type: string
+          format: email
+        password:
+          type: string
+          minLength: 6
+        name:
+          type: string
+        role:
+          type: string
+          enum: [volunteer, admin]
+        language:
+          type: string
+          enum: [kz, ru, en]
+          default: ru
+      required: [email, password, name]
+
+    LoginRequest:
+      type: object
+      properties:
+        email:
+          type: string
+          format: email
+        password:
+          type: string
+      required: [email, password]
+
+    AuthResponse:
+      type: object
+      properties:
+        token:
+          type: string
+        user:
+          $ref: "#/components/schemas/UserProfile"
+      required: [token, user]
+
+    OnboardingRequest:
+      type: object
+      properties:
+        interests:
+          type: array
+          items:
+            type: string
+        skills:
+          type: array
+          items:
+            type: string
+        availability:
+          type: string
+        location:
+          type: string
+        ageGroup:
+          type: string
+        transportMode:
+          type: string
+        answers:
+          type: object
+          additionalProperties: true
+      required: [interests, skills]
+
+    UserProfile:
+      type: object
+      properties:
+        id:
+          type: integer
+        email:
+          type: string
+        name:
+          type: string
+        role:
+          type: string
+          enum: [volunteer, admin]
+        language:
+          type: string
+          enum: [kz, ru, en]
+        avatar:
+          type: string
+          nullable: true
+        onboardingCompleted:
+          type: boolean
+        level:
+          type: integer
+        xp:
+          type: integer
+        badges:
+          type: array
+          items:
+            type: string
+        totalHours:
+          type: number
+        rating:
+          type: number
+        skills:
+          type: array
+          items:
+            type: string
+        interests:
+          type: array
+          items:
+            type: string
+        location:
+          type: string
+          nullable: true
+        bio:
+          type: string
+          nullable: true
+        createdAt:
+          type: string
+          format: date-time
+      required: [id, email, name, role, language, onboardingCompleted, level, xp, badges, totalHours, rating, skills, interests, createdAt]
+
+    Task:
+      type: object
+      properties:
+        id:
+          type: integer
+        title:
+          type: string
+        description:
+          type: string
+        location:
+          type: string
+        lat:
+          type: number
+          nullable: true
+        lng:
+          type: number
+          nullable: true
+        date:
+          type: string
+          format: date-time
+        duration:
+          type: integer
+          description: Duration in hours
+        requiredPeople:
+          type: integer
+        skillsRequired:
+          type: array
+          items:
+            type: string
+        ageRequirements:
+          type: string
+          nullable: true
+        category:
+          type: string
+        status:
+          type: string
+          enum: [draft, published, active, completed, cancelled]
+        qualityScore:
+          type: integer
+          nullable: true
+        successPrediction:
+          type: integer
+          nullable: true
+        createdById:
+          type: integer
+        applicantsCount:
+          type: integer
+        approvedCount:
+          type: integer
+        createdAt:
+          type: string
+          format: date-time
+      required: [id, title, description, location, date, duration, requiredPeople, skillsRequired, category, status, createdById, applicantsCount, approvedCount, createdAt]
+
+    TaskDetail:
+      allOf:
+        - $ref: "#/components/schemas/Task"
+        - type: object
+          properties:
+            applications:
+              type: array
+              items:
+                $ref: "#/components/schemas/Application"
+            teamRoles:
+              $ref: "#/components/schemas/TeamRoles"
+              nullable: true
+
+    CreateTaskRequest:
+      type: object
+      properties:
+        title:
+          type: string
+        description:
+          type: string
+        location:
+          type: string
+        lat:
+          type: number
+          nullable: true
+        lng:
+          type: number
+          nullable: true
+        date:
+          type: string
+          format: date-time
+        duration:
+          type: integer
+        requiredPeople:
+          type: integer
+        skillsRequired:
+          type: array
+          items:
+            type: string
+        ageRequirements:
+          type: string
+          nullable: true
+        category:
+          type: string
+      required: [title, description, location, date, duration, requiredPeople, skillsRequired, category]
+
+    UpdateTaskRequest:
+      type: object
+      properties:
+        title:
+          type: string
+        description:
+          type: string
+        location:
+          type: string
+        date:
+          type: string
+          format: date-time
+        duration:
+          type: integer
+        requiredPeople:
+          type: integer
+        skillsRequired:
+          type: array
+          items:
+            type: string
+        category:
+          type: string
+        status:
+          type: string
+          enum: [draft, published, active, completed, cancelled]
+
+    Application:
+      type: object
+      properties:
+        id:
+          type: integer
+        taskId:
+          type: integer
+        volunteerId:
+          type: integer
+        volunteerName:
+          type: string
+        volunteerEmail:
+          type: string
+        volunteerSkills:
+          type: array
+          items:
+            type: string
+        matchScore:
+          type: integer
+          nullable: true
+        role:
+          type: string
+          nullable: true
+          enum: [leader, executor, communicator, null]
+        status:
+          type: string
+          enum: [pending, approved, rejected, completed]
+        completionPhotoUrl:
+          type: string
+          nullable: true
+        verificationStatus:
+          type: string
+          nullable: true
+          enum: [pending, approved, rejected, null]
+        verificationReason:
+          type: string
+          nullable: true
+        hoursAwarded:
+          type: number
+          nullable: true
+        adminRating:
+          type: number
+          nullable: true
+        adminComment:
+          type: string
+          nullable: true
+        appliedAt:
+          type: string
+          format: date-time
+      required: [id, taskId, volunteerId, volunteerName, volunteerEmail, volunteerSkills, status, appliedAt]
+
+    TeamRoles:
+      type: object
+      properties:
+        leader:
+          $ref: "#/components/schemas/TeamMember"
+          nullable: true
+        executors:
+          type: array
+          items:
+            $ref: "#/components/schemas/TeamMember"
+        communicators:
+          type: array
+          items:
+            $ref: "#/components/schemas/TeamMember"
+      required: [executors, communicators]
+
+    TeamMember:
+      type: object
+      properties:
+        volunteerId:
+          type: integer
+        name:
+          type: string
+        role:
+          type: string
+        matchScore:
+          type: integer
+        reason:
+          type: string
+      required: [volunteerId, name, role, matchScore, reason]
+
+    FeedbackRequest:
+      type: object
+      properties:
+        applicationId:
+          type: integer
+        rating:
+          type: number
+          minimum: 1
+          maximum: 5
+        comment:
+          type: string
+        hoursAwarded:
+          type: number
+      required: [applicationId, rating, hoursAwarded]
+
+    FeedbackResponse:
+      type: object
+      properties:
+        success:
+          type: boolean
+        hoursAwarded:
+          type: number
+        newRating:
+          type: number
+        xpGained:
+          type: integer
+        newBadges:
+          type: array
+          items:
+            type: string
+        newLevel:
+          type: integer
+          nullable: true
+      required: [success, hoursAwarded, newRating, xpGained, newBadges]
+
+    DashboardSummary:
+      type: object
+      properties:
+        totalTasks:
+          type: integer
+        activeTasks:
+          type: integer
+        completedTasks:
+          type: integer
+        totalVolunteers:
+          type: integer
+        totalHoursContributed:
+          type: number
+        avgSuccessRate:
+          type: number
+        tasksByCategory:
+          type: array
+          items:
+            type: object
+            properties:
+              category:
+                type: string
+              count:
+                type: integer
+            required: [category, count]
+        recentApplicationsCount:
+          type: integer
+        pendingVerifications:
+          type: integer
+      required: [totalTasks, activeTasks, completedTasks, totalVolunteers, totalHoursContributed, avgSuccessRate, tasksByCategory, recentApplicationsCount, pendingVerifications]
+
+    ActivityItem:
+      type: object
+      properties:
+        id:
+          type: integer
+        type:
+          type: string
+          enum: [task_created, task_completed, volunteer_joined, badge_earned, task_published]
+        title:
+          type: string
+        description:
+          type: string
+        actorName:
+          type: string
+        timestamp:
+          type: string
+          format: date-time
+      required: [id, type, title, description, actorName, timestamp]
+
+    VolunteerProfile:
+      type: object
+      properties:
+        id:
+          type: integer
+        name:
+          type: string
+        email:
+          type: string
+        level:
+          type: integer
+        xp:
+          type: integer
+        totalHours:
+          type: number
+        rating:
+          type: number
+        skills:
+          type: array
+          items:
+            type: string
+        badges:
+          type: array
+          items:
+            type: string
+        tasksCompleted:
+          type: integer
+        reputationScore:
+          type: number
+        location:
+          type: string
+          nullable: true
+      required: [id, name, email, level, xp, totalHours, rating, skills, badges, tasksCompleted, reputationScore]
+
+    VolunteerPortfolio:
+      allOf:
+        - $ref: "#/components/schemas/VolunteerProfile"
+        - type: object
+          properties:
+            bio:
+              type: string
+              nullable: true
+            completedTasks:
+              type: array
+              items:
+                $ref: "#/components/schemas/Task"
+            achievements:
+              type: array
+              items:
+                $ref: "#/components/schemas/Achievement"
+            interests:
+              type: array
+              items:
+                type: string
+          required: [completedTasks, achievements, interests]
+
+    Achievement:
+      type: object
+      properties:
+        id:
+          type: string
+        name:
+          type: string
+        description:
+          type: string
+        icon:
+          type: string
+        earnedAt:
+          type: string
+          format: date-time
+          nullable: true
+        earned:
+          type: boolean
+      required: [id, name, description, icon, earned]
+
+    LeaderboardEntry:
+      type: object
+      properties:
+        rank:
+          type: integer
+        volunteerId:
+          type: integer
+        name:
+          type: string
+        level:
+          type: integer
+        totalHours:
+          type: number
+        rating:
+          type: number
+        badges:
+          type: array
+          items:
+            type: string
+        tasksCompleted:
+          type: integer
+      required: [rank, volunteerId, name, level, totalHours, rating, badges, tasksCompleted]
+
+    Notification:
+      type: object
+      properties:
+        id:
+          type: integer
+        userId:
+          type: integer
+        type:
+          type: string
+        title:
+          type: string
+        message:
+          type: string
+        read:
+          type: boolean
+        taskId:
+          type: integer
+          nullable: true
+        createdAt:
+          type: string
+          format: date-time
+      required: [id, userId, type, title, message, read, createdAt]
+
+    AiDialogueRequest:
+      type: object
+      properties:
+        message:
+          type: string
+        conversationHistory:
+          type: array
+          items:
+            type: object
+            properties:
+              role:
+                type: string
+                enum: [user, assistant]
+              content:
+                type: string
+            required: [role, content]
+        language:
+          type: string
+          enum: [kz, ru, en]
+          default: ru
+        currentTaskDraft:
+          type: object
+          additionalProperties: true
+          nullable: true
+      required: [message, language]
+
+    AiDialogueResponse:
+      type: object
+      properties:
+        message:
+          type: string
+        taskDraft:
+          type: object
+          additionalProperties: true
+          nullable: true
+        isComplete:
+          type: boolean
+        missingFields:
+          type: array
+          items:
+            type: string
+        suggestedPeopleCount:
+          type: integer
+          nullable: true
+      required: [message, isComplete, missingFields]
+
+    TaskQualityAnalysis:
+      type: object
+      properties:
+        score:
+          type: integer
+          minimum: 0
+          maximum: 100
+        grade:
+          type: string
+          enum: [excellent, good, fair, poor]
+        missingFields:
+          type: array
+          items:
+            type: string
+        suggestions:
+          type: array
+          items:
+            type: string
+        strengths:
+          type: array
+          items:
+            type: string
+      required: [score, grade, missingFields, suggestions, strengths]
+
+    VolunteerMatch:
+      type: object
+      properties:
+        volunteerId:
+          type: integer
+        name:
+          type: string
+        matchScore:
+          type: integer
+        matchReasons:
+          type: array
+          items:
+            type: string
+        skills:
+          type: array
+          items:
+            type: string
+        availabilityMatch:
+          type: boolean
+        locationDistance:
+          type: number
+          nullable: true
+      required: [volunteerId, name, matchScore, matchReasons, skills, availabilityMatch]
+
+    TeamBuildResult:
+      type: object
+      properties:
+        success:
+          type: boolean
+        team:
+          $ref: "#/components/schemas/TeamRoles"
+        reasoning:
+          type: string
+        notificationssSent:
+          type: integer
+      required: [success, team, reasoning, notificationssSent]
+
+    SuccessPrediction:
+      type: object
+      properties:
+        successProbability:
+          type: integer
+          minimum: 0
+          maximum: 100
+        confidenceLevel:
+          type: string
+          enum: [high, medium, low]
+        positiveFactors:
+          type: array
+          items:
+            type: string
+        negativeFactors:
+          type: array
+          items:
+            type: string
+        recommendations:
+          type: array
+          items:
+            type: string
+      required: [successProbability, confidenceLevel, positiveFactors, negativeFactors, recommendations]
+
+    RiskAnalysis:
+      type: object
+      properties:
+        overallRisk:
+          type: string
+          enum: [low, medium, high, critical]
+        riskScore:
+          type: integer
+        risks:
+          type: array
+          items:
+            type: object
+            properties:
+              type:
+                type: string
+              severity:
+                type: string
+                enum: [low, medium, high]
+              description:
+                type: string
+              mitigation:
+                type: string
+            required: [type, severity, description, mitigation]
+        mitigationStrategies:
+          type: array
+          items:
+            type: string
+      required: [overallRisk, riskScore, risks, mitigationStrategies]
+
+    SmartSuggestions:
+      type: object
+      properties:
+        suggestions:
+          type: array
+          items:
+            type: object
+            properties:
+              category:
+                type: string
+              suggestion:
+                type: string
+              impact:
+                type: string
+                enum: [low, medium, high]
+            required: [category, suggestion, impact]
+        urgency:
+          type: string
+          enum: [low, medium, high]
+        currentIssues:
+          type: array
+          items:
+            type: string
+      required: [suggestions, urgency, currentIssues]
+
+    TaskRecommendation:
+      type: object
+      properties:
+        task:
+          $ref: "#/components/schemas/Task"
+        matchScore:
+          type: integer
+        reasons:
+          type: array
+          items:
+            type: string
+        personalMessage:
+          type: string
+      required: [task, matchScore, reasons, personalMessage]
+
+    ChatbotRequest:
+      type: object
+      properties:
+        question:
+          type: string
+        language:
+          type: string
+          enum: [kz, ru, en]
+          default: ru
+      required: [question, language]
+
+    ChatbotResponse:
+      type: object
+      properties:
+        answer:
+          type: string
+        foundInTaskData:
+          type: boolean
+        relatedFields:
+          type: array
+          items:
+            type: string
+      required: [answer, foundInTaskData, relatedFields]
+
+    VerifyCompletionRequest:
+      type: object
+      properties:
+        photoUrl:
+          type: string
+        photoBase64:
+          type: string
+          nullable: true
+      required: [photoUrl]
+
+    VerificationResult:
+      type: object
+      properties:
+        status:
+          type: string
+          enum: [approved, rejected]
+        confidence:
+          type: number
+          minimum: 0
+          maximum: 1
+        reason:
+          type: string
+          nullable: true
+        detectedElements:
+          type: array
+          items:
+            type: string
+      required: [status, confidence, detectedElements]
+
+    ReputationAnalysis:
+      type: object
+      properties:
+        overallScore:
+          type: number
+          minimum: 0
+          maximum: 100
+        reliability:
+          type: number
+        activity:
+          type: number
+        behavior:
+          type: number
+        trend:
+          type: string
+          enum: [improving, stable, declining]
+        insights:
+          type: array
+          items:
+            type: string
+        predictedFutureBehavior:
+          type: string
+      required: [overallScore, reliability, activity, behavior, trend, insights, predictedFutureBehavior]
+
+    Conversation:
+      type: object
+      properties:
+        id:
+          type: integer
+        title:
+          type: string
+        userId:
+          type: integer
+        taskId:
+          type: integer
+          nullable: true
+        createdAt:
+          type: string
+          format: date-time
+        updatedAt:
+          type: string
+          format: date-time
+      required: [id, title, userId, createdAt, updatedAt]
+
+    ConversationWithMessages:
+      allOf:
+        - $ref: "#/components/schemas/Conversation"
+        - type: object
+          properties:
+            messages:
+              type: array
+              items:
+                $ref: "#/components/schemas/Message"
+          required: [messages]
+
+    Message:
+      type: object
+      properties:
+        id:
+          type: integer
+        conversationId:
+          type: integer
+        role:
+          type: string
+          enum: [user, assistant]
+        content:
+          type: string
+        createdAt:
+          type: string
+          format: date-time
+      required: [id, conversationId, role, content, createdAt]
+
+    CreateConversationRequest:
+      type: object
+      properties:
+        title:
+          type: string
+        taskId:
+          type: integer
+          nullable: true
+      required: [title]
+
+    SendOpenaiMessageBody:
+      type: object
+      properties:
+        content:
+          type: string
+        language:
+          type: string
+          enum: [kz, ru, en]
+          default: ru
+        systemContext:
+          type: string
+          nullable: true
+      required: [content]
