@@ -6,6 +6,7 @@ import volunteersRouter from "./volunteers.js";
 import notificationsRouter from "./notifications.js";
 import aiRouter from "./ai.js";
 import openaiChatRouter from "./openai-chat.js";
+import gamificationRouter from "./gamification.js";
 
 const router: IRouter = Router();
 
@@ -16,5 +17,6 @@ router.use(volunteersRouter);
 router.use(notificationsRouter);
 router.use(aiRouter);
 router.use(openaiChatRouter);
+router.use(gamificationRouter);
 
 export default router;

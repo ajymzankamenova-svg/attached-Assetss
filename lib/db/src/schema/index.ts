@@ -5,3 +5,4 @@ export * from "./notifications";
 export * from "./activity";
 export * from "./conversations";
 export * from "./messages";
+export * from "./certificates";
