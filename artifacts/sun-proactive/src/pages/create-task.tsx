@@ -7,7 +7,7 @@ import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { Label } from "@/components/ui/label";
 import { Badge } from "@/components/ui/badge";
-import { Sparkles, Send, CheckCircle, AlertCircle, RefreshCw } from "lucide-react";
+import { Sparkles, Send, CheckCircle, AlertCircle, RefreshCw, ShieldAlert } from "lucide-react";
 import { useLocation } from "wouter";
 import { useToast } from "@/hooks/use-toast";
 

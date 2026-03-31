@@ -3,11 +3,9 @@ import { Layout } from "@/components/layout";
 import { Card } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
-import { ScrollArea } from "@/components/ui/scroll-area";
 import { useAuth } from "@/lib/auth";
-import { Bot, User, Send, Sparkles, AlertCircle } from "lucide-react";
+import { Bot, User, Send, Sparkles } from "lucide-react";
 import { useI18n } from "@/lib/i18n";
-import { Alert, AlertDescription } from "@/components/ui/alert";
 
 interface Message {
   id: string;
@@ -17,14 +15,20 @@ interface Message {
 
 export default function Chat() {
   const { user, token } = useAuth();
-  const { language } = useI18n();
+  const { language, t } = useI18n();
+
+  const greeting = language === "kz"
+    ? t("chat.greeting_kz")
+    : language === "en"
+    ? t("chat.greeting_en")
+    : t("chat.greeting_ru");
+
   const [messages, setMessages] = useState<Message[]>([
-    { id: '1', role: 'assistant', content: "Hello! I'm Sun AI, your civic tech assistant. I can help you find tasks, understand requirements, or answer questions about the platform. How can I help you today?" }
+    { id: '1', role: 'assistant', content: greeting }
   ]);
   const [input, setInput] = useState("");
   const [isStreaming, setIsStreaming] = useState(false);
   const scrollRef = useRef<HTMLDivElement>(null);
-  const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
     if (scrollRef.current) {
@@ -32,42 +36,46 @@ export default function Chat() {
     }
   }, [messages]);
 
+  useEffect(() => {
+    const newGreeting = language === "kz"
+      ? t("chat.greeting_kz")
+      : language === "en"
+      ? t("chat.greeting_en")
+      : t("chat.greeting_ru");
+    setMessages([{ id: '1', role: 'assistant', content: newGreeting }]);
+  }, [language]);
+
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!input.trim() || isStreaming || !token) return;
 
     const userMsg = input;
     setInput("");
-    setError(null);
-    
+
     const newUserMsgId = Date.now().toString();
     setMessages(prev => [...prev, { id: newUserMsgId, role: 'user', content: userMsg }]);
-    
+
     const assistantMsgId = (Date.now() + 1).toString();
     setMessages(prev => [...prev, { id: assistantMsgId, role: 'assistant', content: "" }]);
     setIsStreaming(true);
 
     try {
-      // NOTE: Using a fake endpoint or fallback logic here if the backend isn't ready
-      // The instructions specified using native fetch with ReadableStream for SSE
-      const res = await fetch(`/api/openai/chat/stream`, {
+      const baseUrl = import.meta.env.BASE_URL?.replace(/\/$/, "") || "";
+      const res = await fetch(`${baseUrl}/api/openai/chat/stream`, {
         method: 'POST',
-        headers: { 
-          'Content-Type': 'application/json', 
-          'Authorization': `Bearer ${token}` 
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${token}`
         },
         body: JSON.stringify({ content: userMsg, language })
       });
 
-      if (!res.ok) {
-        throw new Error(`API returned ${res.status}`);
-      }
-
+      if (!res.ok) throw new Error(`API returned ${res.status}`);
       if (!res.body) throw new Error("No response body");
 
       const reader = res.body.getReader();
       const decoder = new TextDecoder();
-      
+
       let done = false;
       while (!done) {
         const { value, done: readerDone } = await reader.read();
@@ -81,30 +89,27 @@ export default function Chat() {
                 const data = JSON.parse(line.slice(6));
                 if (data.choices?.[0]?.delta?.content) {
                   const contentChunk = data.choices[0].delta.content;
-                  setMessages(prev => prev.map(msg => 
-                    msg.id === assistantMsgId 
+                  setMessages(prev => prev.map(msg =>
+                    msg.id === assistantMsgId
                       ? { ...msg, content: msg.content + contentChunk }
                       : msg
                   ));
                 }
-              } catch (e) {
-                console.error("Error parsing SSE JSON", e);
-              }
+              } catch {}
             }
           }
         }
       }
     } catch (err) {
-      console.error(err);
-      // Fallback for demo purposes if endpoint doesn't exist
-      setError("AI service unavailable. Running in fallback simulation mode.");
-      setTimeout(() => {
-        setMessages(prev => prev.map(msg => 
-          msg.id === assistantMsgId 
-            ? { ...msg, content: "I am currently running in simulation mode because the streaming endpoint is not responding. However, I can assure you that your request to \"" + userMsg + "\" is important! Please check back later." }
-            : msg
-        ));
-      }, 1000);
+      setMessages(prev => prev.map(msg =>
+        msg.id === assistantMsgId
+          ? { ...msg, content: language === "kz"
+              ? "Қазір ЖИ қызметі қолжетімсіз. Кейінірек қайталап көріңіз."
+              : language === "en"
+              ? "AI service is currently unavailable. Please try again later."
+              : "Сервис ИИ временно недоступен. Попробуйте позже." }
+          : msg
+      ));
     } finally {
       setIsStreaming(false);
     }
@@ -118,20 +123,13 @@ export default function Chat() {
             <Sparkles className="w-5 h-5" />
           </div>
           <div>
-            <h1 className="text-2xl font-bold text-slate-900">AI Assistant</h1>
-            <p className="text-sm text-slate-500">Ask anything about tasks, platform rules, or your impact.</p>
+            <h1 className="text-2xl font-bold text-slate-900">{t("chat.title")}</h1>
+            <p className="text-sm text-slate-500">{t("chat.subtitle")}</p>
           </div>
         </div>
 
-        {error && (
-          <Alert variant="destructive" className="mb-4">
-            <AlertCircle className="h-4 w-4" />
-            <AlertDescription>{error}</AlertDescription>
-          </Alert>
-        )}
-
         <Card className="flex-1 border-slate-200 shadow-md flex flex-col overflow-hidden bg-white">
-          <ScrollArea className="flex-1 p-6" viewportRef={scrollRef}>
+          <div ref={scrollRef} className="flex-1 p-6 overflow-y-auto">
             <div className="flex flex-col gap-6 max-w-3xl mx-auto">
               {messages.map((msg) => (
                 <div key={msg.id} className={`flex gap-4 ${msg.role === 'user' ? 'flex-row-reverse' : ''}`}>
@@ -141,29 +139,35 @@ export default function Chat() {
                     {msg.role === 'user' ? <User className="w-4 h-4" /> : <Bot className="w-4 h-4" />}
                   </div>
                   <div className={`px-4 py-3 rounded-2xl max-w-[80%] text-sm leading-relaxed ${
-                    msg.role === 'user' 
-                      ? 'bg-slate-900 text-white rounded-tr-none' 
+                    msg.role === 'user'
+                      ? 'bg-slate-900 text-white rounded-tr-none'
                       : 'bg-slate-50 text-slate-800 border border-slate-100 rounded-tl-none'
                   }`}>
-                    {msg.content || (isStreaming && msg.role === 'assistant' ? <span className="animate-pulse">Thinking...</span> : '')}
+                    {msg.content || (isStreaming && msg.role === 'assistant' ? (
+                      <span className="flex gap-1">
+                        <span className="animate-bounce" style={{ animationDelay: "0ms" }}>●</span>
+                        <span className="animate-bounce" style={{ animationDelay: "150ms" }}>●</span>
+                        <span className="animate-bounce" style={{ animationDelay: "300ms" }}>●</span>
+                      </span>
+                    ) : '')}
                   </div>
                 </div>
               ))}
             </div>
-          </ScrollArea>
-          
+          </div>
+
           <div className="p-4 bg-slate-50 border-t border-slate-200">
             <form onSubmit={handleSubmit} className="flex gap-2 max-w-3xl mx-auto relative">
               <Input
                 value={input}
                 onChange={(e) => setInput(e.target.value)}
-                placeholder="Ask a question..."
+                placeholder={t("chat.placeholder")}
                 className="h-12 bg-white border-slate-300 pr-12 focus-visible:ring-indigo-500"
                 disabled={isStreaming}
               />
-              <Button 
-                type="submit" 
-                size="icon" 
+              <Button
+                type="submit"
+                size="icon"
                 className="absolute right-1 top-1 h-10 w-10 bg-indigo-600 hover:bg-indigo-700 text-white"
                 disabled={!input.trim() || isStreaming}
               >
@@ -171,7 +175,7 @@ export default function Chat() {
               </Button>
             </form>
             <div className="text-center mt-2 text-xs text-slate-400">
-              AI can make mistakes. Verify important platform rules. Language: {language.toUpperCase()}
+              {t("chat.disclaimer")} • {t("chat.language")}: {language.toUpperCase()}
             </div>
           </div>
         </Card>

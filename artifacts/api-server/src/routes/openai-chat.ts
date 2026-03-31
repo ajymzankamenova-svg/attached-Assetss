@@ -134,4 +134,53 @@ router.post("/openai/conversations/:id/messages", requireAuth, async (req: AuthR
   }
 });
 
+// Simple stateless chat stream (used by main chat page)
+router.post("/openai/chat/stream", requireAuth, async (req: AuthRequest, res) => {
+  const { content, language = "ru" } = req.body;
+
+  if (!content) {
+    res.status(400).json({ error: "Message content required" });
+    return;
+  }
+
+  const langInstructions: Record<string, string> = {
+    kz: "Қазақ тілінде жауап бер.",
+    ru: "Отвечай на русском языке.",
+    en: "Respond in English.",
+  };
+
+  res.setHeader("Content-Type", "text/event-stream");
+  res.setHeader("Cache-Control", "no-cache");
+  res.setHeader("Connection", "keep-alive");
+  res.flushHeaders();
+
+  try {
+    const systemMsg = `You are Sun Proactive AI — an intelligent assistant for a social impact volunteer platform in Kazakhstan. ${langInstructions[language] || langInstructions.ru} Help users understand tasks, find volunteer opportunities, and make a positive impact in their community. Be concise, helpful and encouraging.`;
+
+    const stream = await openai.chat.completions.create({
+      model: "gpt-5.2",
+      max_completion_tokens: 1024,
+      messages: [
+        { role: "system", content: systemMsg },
+        { role: "user", content },
+      ],
+      stream: true,
+    });
+
+    for await (const chunk of stream) {
+      const delta = chunk.choices[0]?.delta?.content;
+      if (delta) {
+        res.write(`data: ${JSON.stringify({ choices: [{ delta: { content: delta } }] })}\n\n`);
+      }
+    }
+
+    res.write("data: [DONE]\n\n");
+    res.end();
+  } catch (err) {
+    req.log.error(err);
+    res.write(`data: ${JSON.stringify({ error: "Stream failed" })}\n\n`);
+    res.end();
+  }
+});
+
 export default router;
